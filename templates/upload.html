@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sankofa AI - Upload Content</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        .africa-header {
+            background: linear-gradient(135deg, #ff6b35, #f9844a);
+            color: white;
+            padding: 20px 0;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .upload-form {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .file-upload-area:hover {
+            border-color: #007bff;
+            background-color: #f8f9ff;
+        }
+        
+        .file-upload-area.dragover {
+            border-color: #28a745;
+            background-color: #f0fff4;
+        }
+        
+        .preview-area {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .africa-check {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .guidelines {
+            background: linear-gradient(135deg, #6f42c1, #8e44ad);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .form-control:focus {
+            border-color: #ff6b35;
+            box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-4">
+        <!-- Header -->
+        <div class="africa-header">
+            <h1><i class="bi bi-upload"></i> Upload African Content</h1>
+            <p class="mb-0">Share knowledge about African history, culture, and heritage</p>
+        </div>
+
+        <!-- Navigation -->
+        <div class="mb-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary me-2">
+                <i class="bi bi-chat-dots"></i> Chat
+            </a>
+            <a href="{{ url_for('library') }}" class="btn btn-outline-info me-2">
+                <i class="bi bi-book"></i> Library
+            </a>
+        </div>
+
+        <!-- Guidelines -->
+        <div class="guidelines">
+            <h4><i class="bi bi-info-circle"></i> Content Guidelines</h4>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h6>✅ What to Include:</h6>
+                    <ul class="mb-0">
+                        <li>African history and civilizations</li>
+                        <li>Cultural traditions and practices</li>
+                        <li>Historical figures and leaders</li>
+                        <li>Art, music, and literature</li>
+                        <li>Languages and linguistics</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>📋 Supported Formats:</h6>
+                    <ul class="mb-0">
+                        <li>PDF documents (auto text extraction)</li>
+                        <li>Images (JPG, PNG, GIF)</li>
+                        <li>Text content (any length)</li>
+                        <li>Maximum file size: 16MB</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> {{ error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        <!-- Upload Form -->
+        <div class="upload-form">
+            <form method="post" enctype="multipart/form-data" id="uploadForm">
+                <!-- Title -->
+                <div class="mb-4">
+                    <label for="title" class="form-label h5">
+                        <i class="bi bi-pencil"></i> Title *
+                    </label>
+                    <input type="text" class="form-control form-control-lg" id="title" name="title" 
+                           placeholder="e.g., Ancient Kingdom of Kush, Yoruba Traditions, etc." required>
+                    <div class="form-text">Choose a descriptive title that reflects African content</div>
+                </div>
+
+                <!-- Content -->
+                <div class="mb-4">
+                    <label for="content" class="form-label h5">
+                        <i class="bi bi-file-text"></i> Content Description *
+                    </label>
+                    <textarea class="form-control" id="content" name="content" rows="6" 
+                              placeholder="Describe the content, provide context, historical background, or summary..." required></textarea>
+                    <div class="form-text">Provide detailed information about the topic</div>
+                </div>
+
+                <!-- Africa Relevance Check -->
+                <div id="africaCheck" class="africa-check" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <div>
+                            <strong>Africa Relevance Detected!</strong>
+                            <div id="detectedKeywords" class="mt-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Uploads -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <label class="form-label h5">
+                                <i class="bi bi-file-earmark-pdf text-danger"></i> PDF Document
+                            </label>
+                            <div class="file-upload-area" onclick="document.getElementById('pdf').click()">
+                                <i class="bi bi-cloud-upload display-4 text-muted"></i>
+                                <h5 class="mt-3">Upload PDF Document</h5>
+                                <p class="text-muted">Click or drag PDF files here</p>
+                                <input type="file" class="d-none" id="pdf" name="pdf" accept=".pdf">
+                            </div>
+                            <div id="pdfPreview" class="preview-area">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-file-earmark-pdf text-danger fs-2 me-3"></i>
+                                    <div>
+                                        <div id="pdfName" class="fw-bold"></div>
+                                        <div id="pdfSize" class="text-muted small"></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="clearFile('pdf')">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <label class="form-label h5">
+                                <i class="bi bi-image text-success"></i> Image
+                            </label>
+                            <div class="file-upload-area" onclick="document.getElementById('image').click()">
+                                <i class="bi bi-card-image display-4 text-muted"></i>
+                                <h5 class="mt-3">Upload Image</h5>
+                                <p class="text-muted">Click or drag images here</p>
+                                <input type="file" class="d-none" id="image" name="image" accept="image/*">
+                            </div>
+                            <div id="imagePreview" class="preview-area">
+                                <img id="previewImg" src="" alt="Preview" class="img-fluid rounded mb-2" style="max-height: 200px;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div id="imageName" class="fw-bold"></div>
+                                        <div id="imageSize" class="text-muted small"></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearFile('image')">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn">
+                        <i class="bi bi-upload"></i> Upload Content
+                    </button>
+                    <div class="form-text mt-2">Content will be processed and indexed for search</div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Processing Modal -->
+        <div class="modal fade" id="processingModal" data-bs-backdrop="static" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body text-center py-4">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <h5>Processing Your Content</h5>
+                        <p class="text-muted mb-0">Please wait while we analyze and index your content...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Africa-related keywords for validation
+        const africaKeywords = [
+            'africa', 'african', 'egypt', 'nigeria', 'kenya', 'ghana', 'ethiopia', 
+            'morocco', 'south africa', 'tunisia', 'algeria', 'zimbabwe', 'botswana',
+            'mandela', 'nkrumah', 'nyerere', 'kenyatta', 'haile selassie',
+            'sahara', 'nile', 'kilimanjaro', 'victoria', 'congo', 'zambezi',
+            'swahili', 'yoruba', 'igbo', 'amharic', 'arabic', 'hausa',
+            'ancient', 'kingdom', 'empire', 'colonial', 'independence',
+            'apartheid', 'diaspora', 'slavery', 'civilization', 'mali', 'songhai',
+            'kush', 'axum', 'benin', 'zulu', 'maasai', 'akan', 'bantu'
+        ];
+
+        // Check Africa relevance
+        function checkAfricaRelevance() {
+            const title = document.getElementById('title').value.toLowerCase();
+            const content = document.getElementById('content').value.toLowerCase();
+            const text = title + ' ' + content;
+            
+            const foundKeywords = africaKeywords.filter(keyword => 
+                text.includes(keyword.toLowerCase())
+            );
+            
+            const africaCheck = document.getElementById('africaCheck');
+            const detectedKeywords = document.getElementById('detectedKeywords');
+            
+            if (foundKeywords.length > 0) {
+                africaCheck.style.display = 'block';
+                detectedKeywords.innerHTML = `Detected: ${foundKeywords.slice(0, 5).join(', ')}`;
+            } else {
+                africaCheck.style.display = 'none';
+            }
+        }
+
+        // File handling
+        function handleFileSelect(inputId) {
+            const input = document.getElementById(inputId);
+            const file = input.files[0];
+            
+            if (file) {
+                if (inputId === 'pdf') {
+                    showPdfPreview(file);
+                } else if (inputId === 'image') {
+                    showImagePreview(file);
+                }
+            }
+        }
+
+        function showPdfPreview(file) {
+            document.getElementById('pdfName').textContent = file.name;
+            document.getElementById('pdfSize').textContent = formatFileSize(file.size);
+            document.getElementById('pdfPreview').style.display = 'block';
+        }
+
+        function showImagePreview(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('imageName').textContent = file.name;
+                document.getElementById('imageSize').textContent = formatFileSize(file.size);
+                document.getElementById('imagePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearFile(type) {
+            document.getElementById(type).value = '';
+            document.getElementById(type + 'Preview').style.display = 'none';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Drag and drop functionality
+        function setupDragAndDrop() {
+            const uploadAreas = document.querySelectorAll('.file-upload-area');
+            
+            uploadAreas.forEach(area => {
+                area.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.classList.add('dragover');
+                });
+                
+                area.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('dragover');
+                });
+                
+                area.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('dragover');
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const inputId = this.querySelector('input').id;
+                        const input = document.getElementById(inputId);
+                        
+                        // Validate file type
+                        const file = files[0];
+                        if (inputId === 'pdf' && file.type !== 'application/pdf') {
+                            alert('Please select a PDF file');
+                            return;
+                        }
+                        if (inputId === 'image' && !file.type.startsWith('image/')) {
+                            alert('Please select an image file');
+                            return;
+                        }
+                        
+                        input.files = files;
+                        handleFileSelect(inputId);
+                    }
+                });
+            });
+        }
+
+        // Form validation
+        function validateForm() {
+            const title = document.getElementById('title').value.trim();
+            const content = document.getElementById('content').value.trim();
+            
+            if (!title || !content) {
+                alert('Please fill in both title and content fields');
+                return false;
+            }
+            
+            // Check if content is Africa-related
+            const text = (title + ' ' + content).toLowerCase();
+            const hasAfricaKeywords = africaKeywords.some(keyword => 
+                text.includes(keyword.toLowerCase())
+            );
+            
+            if (!hasAfricaKeywords) {
+                const confirm = window.confirm(
+                    'This content doesn\'t appear to be related to Africa. ' +
+                    'Sankofa AI specializes in African history and culture. ' +
+                    'Are you sure you want to continue?'
+                );
+                if (!confirm) return false;
+            }
+            
+            return true;
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup drag and drop
+            setupDragAndDrop();
+            
+            // File input change handlers
+            document.getElementById('pdf').addEventListener('change', function() {
+                handleFileSelect('pdf');
+            });
+            
+            document.getElementById('image').addEventListener('change', function() {
+                handleFileSelect('image');
+            });
+            
+            // Content change handlers for Africa relevance check
+            document.getElementById('title').addEventListener('input', checkAfricaRelevance);
+            document.getElementById('content').addEventListener('input', checkAfricaRelevance);
+            
+            // Form submission
+            document.getElementById('uploadForm').addEventListener('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    return;
+                }
+                
+                // Show processing modal
+                const modal = new bootstrap.Modal(document.getElementById('processingModal'));
+                modal.show();
+                
+                // Disable submit button
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+            });
+        });
+    </script>
+</body>
+</html>

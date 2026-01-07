@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sankofa AI - African History & Culture Assistant</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        .chat-container {
+            height: 70vh;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .ai-message {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            color: white;
+            margin-right: auto;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 10px 15px;
+            background: #f1f1f1;
+            border-radius: 15px;
+            margin-right: auto;
+            max-width: 100px;
+        }
+        
+        .typing-dot {
+            height: 8px;
+            width: 8px;
+            border-radius: 50%;
+            background-color: #999;
+            display: inline-block;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        
+        .suggestion-btn {
+            background: rgba(0, 123, 255, 0.1);
+            border: 1px solid #007bff;
+            color: #007bff;
+            border-radius: 20px;
+            padding: 5px 15px;
+            margin: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .suggestion-btn:hover {
+            background: #007bff;
+            color: white;
+        }
+        
+        .africa-header {
+            background: linear-gradient(135deg, #ff6b35, #f9844a);
+            color: white;
+            padding: 30px 0;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .input-group-text {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            color: white;
+        }
+        
+        .form-control {
+            border-left: none;
+        }
+        
+        .welcome-message {
+            background: linear-gradient(135deg, #6f42c1, #8e44ad);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-4">
+        
+
+        <div class="row">
+            <div class="col-12">
+                <!-- Navigation -->
+                <div class="mb-3">
+                    
+                    <button onclick="clearChat()" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise"></i> Clear Chat
+                    </button>
+                </div>
+
+                <!-- Welcome Message -->
+                <div id="welcomeMessage" class="welcome-message">
+                    <h4><i class="bi bi-chat-heart"></i> Welcome to Sankofa AI!</h4>
+                    <p class="mb-3">I'm here to help you explore African history, culture, and heritage. Ask me anything about:</p>
+                    <div class="d-flex flex-wrap justify-content-center">
+                        <button class="suggestion-btn" onclick="sendSuggestion('Ancient African civilizations')">Ancient Civilizations</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('African independence movements')">Independence Movements</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('Traditional African cultures')">Traditional Cultures</button>
+                        <button class="suggestion-btn" onclick="sendSuggestion('African music and art')">Music & Art</button>
+                    </div>
+                </div>
+
+                <!-- Chat Container -->
+                <div id="chatContainer" class="chat-container">
+                    <div class="typing-indicator" id="typingIndicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="mt-3">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-chat-dots"></i>
+                        </span>
+                        <input type="text" 
+                               class="form-control" 
+                               id="messageInput" 
+                               placeholder="Ask me about African history, culture, leaders, kingdoms..."
+                               onkeypress="handleKeyPress(event)">
+                        <button class="btn btn-primary" onclick="sendMessage()">
+                            <i class="bi bi-send"></i> Send
+                        </button>
+                    </div>
+                    <small class="text-muted mt-1 d-block">
+                        <i class="bi bi-info-circle"></i> I specialize in African topics. Ask about history, culture, languages, leaders, and more!
+                    </small>
+                </div>
+                
+
+                <!-- Suggestions Area -->
+                <div id="suggestionsArea" class="mt-3" style="display: none;">
+                    <small class="text-muted">Explore these topics:</small>
+                    <div id="suggestions" class="mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let chatHistory = [];
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendSuggestion(suggestion) {
+            document.getElementById('messageInput').value = suggestion;
+            sendMessage();
+        }
+
+        function addMessage(message, isUser = false, source = null) {
+            const chatContainer = document.getElementById('chatContainer');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            
+            // Hide welcome message after first interaction
+            if (welcomeMessage && (isUser || chatHistory.length > 0)) {
+                welcomeMessage.style.display = 'none';
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            
+            let messageContent = message;
+            if (!isUser && source) {
+                messageContent += `<br><small><i class="bi bi-book"></i> Source: ${source}</small>`;
+            }
+            
+            messageDiv.innerHTML = messageContent;
+            
+            // Insert before typing indicator
+            const typingIndicator = document.getElementById('typingIndicator');
+            chatContainer.insertBefore(messageDiv, typingIndicator);
+            
+            // Scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Store in history
+            chatHistory.push({
+                message: message,
+                isUser: isUser,
+                timestamp: new Date(),
+                source: source
+            });
+        }
+
+        
+
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'block';
+            const chatContainer = document.getElementById('chatContainer');
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+
+        function showSuggestions(suggestions) {
+            if (!suggestions || suggestions.length === 0) return;
+            
+            const suggestionsArea = document.getElementById('suggestionsArea');
+            const suggestionsDiv = document.getElementById('suggestions');
+            
+            suggestionsDiv.innerHTML = '';
+            suggestions.forEach(suggestion => {
+                const btn = document.createElement('button');
+                btn.className = 'suggestion-btn';
+                btn.textContent = suggestion;
+                btn.onclick = () => sendSuggestion(suggestion);
+                suggestionsDiv.appendChild(btn);
+            });
+            
+            suggestionsArea.style.display = 'block';
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage(message, true);
+            input.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: message })
+                });
+                
+                const data = await response.json();
+                
+                hideTypingIndicator();
+                
+                if (data.error) {
+                    addMessage(`Sorry, there was an error: ${data.error}`, false);
+                } else {
+                    // Format the response with proper line breaks
+                    const formattedResponse = data.response.replace(/\n/g, '<br>');
+                    addMessage(formattedResponse, false, data.source);
+                    
+                    // Show suggestions if available
+                    if (data.suggestions) {
+                        showSuggestions(data.suggestions);
+                    }
+                }
+                
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage('Sorry, I encountered an error while processing your request. Please try again.', false);
+                console.error('Chat error:', error);
+            }
+        }
+
+        function clearChat() {
+            const chatContainer = document.getElementById('chatContainer');
+            const messages = chatContainer.querySelectorAll('.message');
+            messages.forEach(msg => msg.remove());
+            
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            if (welcomeMessage) {
+                welcomeMessage.style.display = 'block';
+            }
+            
+            const suggestionsArea = document.getElementById('suggestionsArea');
+            suggestionsArea.style.display = 'none';
+            
+            chatHistory = [];
+        }
+
+        // Initialize chat
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('messageInput').focus();
+        });
+    </script>
+</body>
+</html>
